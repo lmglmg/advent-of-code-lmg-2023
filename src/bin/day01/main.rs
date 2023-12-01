@@ -1,19 +1,22 @@
+const PATTERNS: &[&str]= &[ "1", "one", "2", "two", "3", "three", "4", "four", "5", "five", "6", "six", "7", "seven", "8", "eight", "9", "nine" ];
+
+use aho_corasick::{AhoCorasick, PatternID};
+
 #[inline(always)]
-fn to_digit_value(c: u8) -> i32 {
-    match c {
-        b'0'..=b'9' => (c - b'0') as i32,
-        _ => panic!("Invalid digit"),
-    }
+fn pattern_to_value(pattern: PatternID) -> i32 {
+    pattern.as_i32() / 2 + 1
 }
 
-fn tuning_param(s: String) -> i32 {
-    let s = s.as_bytes(); // No need for utf8 handling
+#[inline(always)]
+fn tuning_param(finder: &AhoCorasick, s: String) -> i32 {
+    let mut iter = finder.find_overlapping_iter(&s);
 
-    let first_digit = s.iter().find(|c| c.is_ascii_digit()).unwrap();
-    let last_digit = s.iter().rev().find(|c| c.is_ascii_digit()).unwrap();
+    let     first_digit = pattern_to_value(iter.next().unwrap().pattern());
+    let mut last_digit = first_digit;
 
-    let first_digit = to_digit_value(*first_digit);
-    let last_digit  = to_digit_value(*last_digit);
+    for m in iter {
+        last_digit = pattern_to_value(m.pattern());
+    }
 
     first_digit * 10 + last_digit
 }
@@ -21,10 +24,12 @@ fn tuning_param(s: String) -> i32 {
 fn main() {
     let stdin = std::io::stdin();
 
+    let finder = AhoCorasick::new(PATTERNS).unwrap();
+
     let sum: i32 = stdin
         .lines()
-        .filter_map(Result::ok)
-        .map(tuning_param)
+        .map_while(Result::ok)
+        .map(|s| tuning_param(&finder, s))
         .sum();
 
     println!("{}", sum);
