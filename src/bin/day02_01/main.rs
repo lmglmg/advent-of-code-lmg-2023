@@ -41,9 +41,7 @@ fn game_power_level(s: String) -> i32 {
 }
 
 fn main () {
-    let stdio = std::io::stdin();
-
-    let sum: i32 = stdio
+    let sum: i32 = std::io::stdin()
         .lines()
         .map_while(Result::ok)
         .map(game_power_level)

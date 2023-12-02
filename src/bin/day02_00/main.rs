@@ -27,9 +27,9 @@ fn parse_single_game(s: &str) -> Game {
 
 fn per_element_max(a: Game, b: Game) -> Game {
     Game {
-        red  : a.red.max(b.red),
+        red  : a.red  .max(b.red  ),
         green: a.green.max(b.green),
-        blue : a.blue.max(b.blue),
+        blue : a.blue .max(b.blue ),
     }
 }
 
@@ -47,17 +47,11 @@ fn game_id_if_valid(s: String) -> Option<i32> {
         .map(parse_single_game)
         .fold(Game::default(), per_element_max);
 
-    if is_viable(max_game) {
-        Some(game_id_part.parse().unwrap())
-    } else {
-        None
-    }
+    is_viable(max_game).then(|| game_id_part.parse().unwrap())
 }
 
 fn main () {
-    let stdio = std::io::stdin();
-
-    let sum: i32 = stdio
+    let sum: i32 = std::io::stdin()
         .lines()
         .map_while(Result::ok)
         .map(game_id_if_valid)
