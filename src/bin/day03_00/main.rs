@@ -104,8 +104,7 @@ impl Processor {
         let mut number_location = None;
 
         // Parse the line
-        for i in 0..line.len() {
-            let c = line[i];
+        for (i, &c) in line.iter().enumerate() {
             match (c.is_ascii_digit(), &mut number_location) {
                 // Start parsing a new number
                 (true, None) => {
@@ -136,9 +135,8 @@ impl Processor {
             }
         }
         // Finish the running number
-        match number_location {
-            Some(val) => self.number_locations.next.push(val),
-            None => {}
+        if let Some(val) = number_location {
+            self.number_locations.next.push(val);
         }
     }
 }

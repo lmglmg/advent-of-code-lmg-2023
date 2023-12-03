@@ -1,10 +1,10 @@
 use std::mem::swap;
 
 #[derive(Default)]
-struct GearLocations(Vec<usize>);
+struct GearLocations(Vec<u16>);
 
 impl GearLocations {
-    pub fn push(&mut self, index: usize) {
+    pub fn push(&mut self, index: u16) {
         if let Some(last) = self.0.last() {
            assert!(*last < index);
         }
@@ -36,18 +36,12 @@ struct NumberLocation {
 
 impl NumberLocation {
     pub fn is_adjecant(&self, gear_index: u16) -> bool {
-        if gear_index < self.start.saturating_sub(1) {
-            return false;
-        }
-        if gear_index > self.start + self.len as u16 {
-            return false;
-        }
-        true
+        (self.start.saturating_sub(1)..self.start + self.len as u16 + 1).contains(&gear_index)
     }
 }
 
 fn adjecant_locations(numbers: &[NumberLocation], gear_index: u16) -> Vec<i32> {
-    let start_index = gear_index.saturating_sub(1) as u16;
+    let start_index = gear_index.saturating_sub(1);
     let closest_index = numbers.binary_search_by(|probe| probe.start.cmp(&start_index)).unwrap_or_else(|x| x);
 
     let mut result = Vec::new();
@@ -55,8 +49,7 @@ fn adjecant_locations(numbers: &[NumberLocation], gear_index: u16) -> Vec<i32> {
     let min_index = closest_index.saturating_sub(1);
     let max_index = (closest_index + 2).min(numbers.len());
 
-    for i in min_index..max_index {
-        let number = &numbers[i];
+    for number in numbers.iter().take(max_index).skip(min_index) {
         if number.is_adjecant(gear_index) {
             result.push(number.value);
         }
@@ -104,9 +97,10 @@ impl Processor {
 
         for gear_location in &self.symbol_locations.curr.0 {
             let mut all_nubmers = Vec::new();
-            all_nubmers.extend_from_slice(&adjecant_locations(&self.number_locations.prev, *gear_location as u16));
-            all_nubmers.extend_from_slice(&adjecant_locations(&self.number_locations.curr, *gear_location as u16));
-            all_nubmers.extend_from_slice(&adjecant_locations(&self.number_locations.next, *gear_location as u16));
+            all_nubmers.extend(adjecant_locations(&self.number_locations.prev, *gear_location));
+            all_nubmers.extend(adjecant_locations(&self.number_locations.curr, *gear_location));
+            all_nubmers.extend(adjecant_locations(&self.number_locations.next, *gear_location));
+
 
             if all_nubmers.len() == 2 {
                 sum += all_nubmers[0] * all_nubmers[1];
@@ -120,8 +114,8 @@ impl Processor {
         let mut number_location = None;
 
         // Parse the line
-        for i in 0..line.len() {
-            let c = line[i];
+        for (i, &c) in line.iter().enumerate() {
+
             match (c.is_ascii_digit(), &mut number_location) {
                 // Start parsing a new number
                 (true, None) => {
@@ -139,23 +133,30 @@ impl Processor {
                 // No digit, no running number
                 (false, None) => {
                     if c == b'*' {
-                        self.symbol_locations.next.push(i);
+                        self.symbol_locations.next.push(i as u16);
                     }
                 }
                 // No digit, but running number. Finish it.
                 (false, Some(_)) => {
                     self.number_locations.next.push(number_location.take().unwrap());
                     if c == b'*' {
-                        self.symbol_locations.next.push(i);
+                        self.symbol_locations.next.push(i as u16);
                     }
                 }
             }
+
         }
+
         // Finish the running number
-        match number_location {
-            Some(val) => self.number_locations.next.push(val),
-            None => {}
+        if let Some(val) = number_location {
+            self.number_locations.next.push(val);
         }
+    }
+
+    pub fn finalize(self) -> i32 {
+        let mut s = self;
+        s.process_line(&[]);
+        s.sum
     }
 }
 
@@ -163,13 +164,13 @@ fn main() {
 
     let mut processor = Processor::default();
 
-    for line in std::io::stdin().lines() {
-        let line = line.unwrap();
-        let line = line.as_bytes();
-        processor.process_line(line);
-    }
+    std::io::stdin()
+        .lines()
+        .map_while(Result::ok)
+        .map(|line| line.into_bytes())
+        .for_each(|line| processor.process_line(&line));
 
-    processor.process_line(&Vec::new());
+    let sum = processor.finalize();
 
-    println!("{}", processor.sum)
+    println!("{}", sum)
 }
