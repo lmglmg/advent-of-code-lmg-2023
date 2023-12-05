@@ -59,26 +59,26 @@ impl FullRangeMap {
 
         for index_a in 0..(range_a.ranges.len()-1) {
             let (a_source_start, a_source_end) = (range_a.ranges[index_a].source, range_a.ranges[index_a+1].source);
-            let source_len = a_source_end - a_source_start;
+            let a_len = a_source_end - a_source_start;
             let a_target_start = range_a.ranges[index_a].target;
 
             let mut b_range_index = range_b.matching_range_index(a_target_start);
             let mut i = 0;
 
-            while i < source_len {
+            while i < a_len {
                 let b_range      = &range_b.ranges[b_range_index];
                 let b_range_next = &range_b.ranges[b_range_index+1];
 
-                let offset = (a_target_start - range_b.ranges[b_range_index].source) + i;
+                let b_offset = (a_target_start - range_b.ranges[b_range_index].source) + i;
 
-                let final_target_start = b_range.target + offset;
-                let final_range_len = b_range_next.source - b_range.source - offset;
+                let b_target_start = b_range.target + b_offset;
+                let b_len          = (b_range_next.source - b_range.source) - b_offset;
 
-                let range_len = final_range_len.min(source_len - i);
+                let min_len = b_len.min(a_len - i);
 
-                result.add(a_source_start + i, final_target_start, range_len);
+                result.add(a_source_start + i, b_target_start, min_len);
 
-                i += range_len;
+                i             += min_len;
                 b_range_index += 1;
             }
         }
