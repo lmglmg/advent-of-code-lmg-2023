@@ -14,6 +14,7 @@ impl FullRangeMap {
         Self {
             ranges: vec![
                 SingleRange{ source: 0, target: 0 },
+                SingleRange{ source: i64::MAX, target: i64::MAX },
             ],
         }
     }
@@ -49,14 +50,53 @@ impl FullRangeMap {
         }
     }
 
+    fn matching_range_index(&self, source: i64) -> usize {
+        self.ranges.binary_search_by(|r| r.source.cmp(&source)).unwrap_or_else(|i| i - 1)
+    }
+
+    pub fn matching_range(&self, source: i64) -> SingleRange {
+        let range_index = self.matching_range_index(source);
+        self.ranges[range_index]
+    }
+
     pub fn get(&self, source: i64) -> i64 {
-        let range_index = self.ranges.binary_search_by(|r| r.source.cmp(&source)).unwrap_or_else(|i| i - 1);
-
-        let range = &self.ranges[range_index];
-
+        let range = self.matching_range(source);
         (source - range.source) + range.target
     }
+
+    fn fuse_composite_ranges(range_a: &Self, range_b: &Self) -> Self {
+        let mut result = Self::new();
+
+        for index_a in 0..(range_a.ranges.len()-1) {
+            let (a_source_start, a_source_end) = (range_a.ranges[index_a].source, range_a.ranges[index_a+1].source);
+            let source_len = a_source_end - a_source_start;
+            let a_target_start = range_a.ranges[index_a].target;
+            let mut b_range_index = range_b.matching_range_index(a_target_start);
+            let mut i = 0;
+
+            while i < source_len {
+                let b_range      = &range_b.ranges[b_range_index];
+                let b_range_next = &range_b.ranges[b_range_index+1];
+
+                let offset = (a_target_start - range_b.ranges[b_range_index].source) + i;
+
+                let final_target_start = b_range.target + offset;
+                let final_range_len = b_range_next.source - b_range.source - offset;
+
+                let range_len = final_range_len.min(source_len - i);
+
+                result.add(a_source_start + i, final_target_start, range_len);
+
+                i += range_len;
+                b_range_index += 1;
+            }
+        }
+
+        result
+    }
 }
+
+
 
 fn main() {
     let mut maps = vec![FullRangeMap::new(); 7];
@@ -100,6 +140,8 @@ fn main() {
         );
     }
 
+    let fused_map = maps.iter().fold(FullRangeMap::new(), |a, b| FullRangeMap::fuse_composite_ranges(&a, &b));
+
     let mut lowest_location = None;
 
     for seed_range in seed_ranges.chunks_exact(2) {
@@ -107,11 +149,7 @@ fn main() {
         let range_len = seed_range[1];
 
         for seed in start_range..start_range+range_len {
-            let mut location = seed;
-
-            for map in &maps {
-                location = map.get(location);
-            }
+            let location = fused_map.get(seed);
 
             match lowest_location {
                 None => lowest_location = Some(location),
