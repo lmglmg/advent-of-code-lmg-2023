@@ -61,6 +61,7 @@ impl FullRangeMap {
             let (a_source_start, a_source_end) = (range_a.ranges[index_a].source, range_a.ranges[index_a+1].source);
             let source_len = a_source_end - a_source_start;
             let a_target_start = range_a.ranges[index_a].target;
+
             let mut b_range_index = range_b.matching_range_index(a_target_start);
             let mut i = 0;
 
@@ -89,8 +90,8 @@ impl FullRangeMap {
 
 
 fn main() {
-    let mut maps = vec![FullRangeMap::new(); 7];
-    let mut map_index: i64 = -1;
+    let mut fused_map   = FullRangeMap::new();
+    let mut current_map = FullRangeMap::new();
 
     let seed_ranges: Vec<i64> = std::io::stdin()
         .lines()
@@ -112,7 +113,8 @@ fn main() {
         }
 
         if line.ends_with(" map:") {
-            map_index += 1;
+            fused_map = FullRangeMap::fuse_composite_ranges(&fused_map, &current_map);
+            current_map = FullRangeMap::new();
             continue;
         }
 
@@ -123,14 +125,15 @@ fn main() {
             .collect();
 
         // Note! Order is a bit weird here!
-        maps[map_index as usize].add(
+        current_map.add(
             indices[1],
             indices[0],
             indices[2],
         );
     }
 
-    let fused_map = maps.iter().fold(FullRangeMap::new(), |a, b| FullRangeMap::fuse_composite_ranges(&a, &b));
+    // Final fuse after last map is added
+    fused_map = FullRangeMap::fuse_composite_ranges(&fused_map, &current_map);
 
     let mut lowest_location = i64::MAX;
 
