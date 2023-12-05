@@ -1,16 +1,16 @@
 #[derive(Clone, Default, Copy, Debug)]
 struct SingleRange{
-    pub source: i64,
-    pub target: i64,
+    source: i64,
+    target: i64,
 }
 
 #[derive(Clone, Debug)]
 struct FullRangeMap {
-    pub ranges: Vec<SingleRange>,
+    ranges: Vec<SingleRange>,
 }
 
 impl FullRangeMap {
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self {
             ranges: vec![
                 SingleRange{ source: 0, target: 0 },
@@ -20,7 +20,7 @@ impl FullRangeMap {
     }
 
     // Assume that the ranges will not overlap. Watch out for zero
-    pub fn add(&mut self, source_start: i64, target_start: i64, length: i64) {
+    fn add(&mut self, source_start: i64, target_start: i64, length: i64) {
         // Add ranges in pair. And then just sort them to push them back in the right order
 
         let start_range = SingleRange{
@@ -52,16 +52,6 @@ impl FullRangeMap {
 
     fn matching_range_index(&self, source: i64) -> usize {
         self.ranges.binary_search_by(|r| r.source.cmp(&source)).unwrap_or_else(|i| i - 1)
-    }
-
-    pub fn matching_range(&self, source: i64) -> SingleRange {
-        let range_index = self.matching_range_index(source);
-        self.ranges[range_index]
-    }
-
-    pub fn get(&self, source: i64) -> i64 {
-        let range = self.matching_range(source);
-        (source - range.source) + range.target
     }
 
     fn fuse_composite_ranges(range_a: &Self, range_b: &Self) -> Self {
@@ -142,23 +132,26 @@ fn main() {
 
     let fused_map = maps.iter().fold(FullRangeMap::new(), |a, b| FullRangeMap::fuse_composite_ranges(&a, &b));
 
-    let mut lowest_location = None;
+    let mut lowest_location = i64::MAX;
 
     for seed_range in seed_ranges.chunks_exact(2) {
-        let start_range = seed_range[0];
-        let range_len = seed_range[1];
+        let (seed_start_range, seed_range_len) = (seed_range[0], seed_range[1]);
 
-        for seed in start_range..start_range+range_len {
-            let location = fused_map.get(seed);
+        let mut range_index = fused_map.matching_range_index(seed_start_range);
 
-            match lowest_location {
-                None => lowest_location = Some(location),
-                Some(l) => if location < l {
-                    lowest_location = Some(location);
-                }
+        while fused_map.ranges[range_index].source < seed_start_range + seed_range_len {
+            let range = fused_map.ranges[range_index];
+
+            if range.source < seed_start_range {
+                let offset = seed_start_range - range.source;
+                lowest_location = lowest_location.min(range.target + offset);
+            } else {
+                lowest_location = lowest_location.min(range.target);
             }
+
+            range_index += 1;
         }
     }
 
-    println!("{}", lowest_location.unwrap());
+    println!("{}", lowest_location);
 }
