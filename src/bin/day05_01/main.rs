@@ -1,42 +1,66 @@
-#[derive(Default, Clone, Copy)]
-struct SingleRangeMap {
-    pub source_start: i64,
-    pub target_start: i64,
-    pub len: i64,
+#[derive(Clone, Default, Copy, Debug)]
+struct SingleRange{
+    pub source: i64,
+    pub target: i64,
 }
 
-#[derive(Default, Clone)]
+#[derive(Clone, Debug)]
 struct FullRangeMap {
-    pub ranges: Vec<SingleRangeMap>,
+    pub ranges: Vec<SingleRange>,
 }
 
 impl FullRangeMap {
-    pub fn add(&mut self, source_start: i64, target_start: i64, len: i64) {
-        self.ranges.push(SingleRangeMap {
-            source_start,
-            target_start,
-            len,
-        });
-        self.ranges.sort_by_key(|r| r.source_start);
+    pub fn new() -> Self {
+        Self {
+            ranges: vec![
+                SingleRange{ source: 0, target: 0 },
+            ],
+        }
+    }
+
+    // Assume that the ranges will not overlap. Watch out for zero
+    pub fn add(&mut self, source_start: i64, target_start: i64, length: i64) {
+        // Add ranges in pair. And then just sort them to push them back in the right order
+
+        let start_range = SingleRange{
+            source: source_start,
+            target: target_start,
+        };
+
+        let end_range  = SingleRange{
+            source: source_start + length,
+            target: source_start + length,
+        };
+
+        let start_range_index = self.ranges.binary_search_by(|r| r.source.cmp(&start_range.source));
+
+        // If ranges overlap, then just replace the start range.
+        if let Ok(index) = start_range_index {
+            self.ranges[index] = start_range;
+        } else {
+            self.ranges.insert(start_range_index.unwrap_err(), start_range);
+        }
+
+        let end_range_index = self.ranges.binary_search_by(|r| r.source.cmp(&end_range.source));
+        if let Ok(_) = end_range_index {
+            // If ranges overlap, just leave the end range as is.
+        } else {
+            self.ranges.insert(end_range_index.unwrap_err(), end_range);
+        }
     }
 
     pub fn get(&self, source: i64) -> i64 {
-        for range in &self.ranges {
-            if source >= range.source_start && source < range.source_start + range.len {
-                return range.target_start + (source - range.source_start);
-            }
-            if source < range.source_start {
-                return source;
-            }
-        }
+        let range_index = self.ranges.binary_search_by(|r| r.source.cmp(&source)).unwrap_or_else(|i| i - 1);
 
-        source
+        let range = &self.ranges[range_index];
+
+        (source - range.source) + range.target
     }
 }
 
 fn main() {
-    let mut maps = vec![FullRangeMap::default(); 7];
-    let mut map_index = -1;
+    let mut maps = vec![FullRangeMap::new(); 7];
+    let mut map_index: i64 = -1;
 
     let seed_ranges: Vec<i64> = std::io::stdin()
         .lines()
