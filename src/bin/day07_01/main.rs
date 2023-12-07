@@ -37,7 +37,7 @@ enum HandStrength {
 #[derive(Copy, Clone, Eq, PartialEq)]
 struct Hand {
     card_counts: [(Card, u8); 5],
-    original_order: [Card; 5],
+    original_cards: [Card; 5],
 }
 
 impl Card {
@@ -80,16 +80,16 @@ impl Hand {
         if hand_strength != std::cmp::Ordering::Equal {
             hand_strength
         } else {
-            other.original_order.cmp(&self.original_order)
+            other.original_cards.cmp(&self.original_cards)
         }
     }
 
     fn from_str(s: &str) -> Self {
         assert!(s.len() == 5);
 
-        let mut sorted_cards: [Card; 5] = [Card::new(0); 5];
+        let mut original_cards: [Card; 5] = [Card::new(0); 5];
         for (i, c) in s.chars().enumerate() {
-            sorted_cards[i] = Card::from_char(c);
+            original_cards[i] = Card::from_char(c);
         }
 
         let mut card_counts = [(Card::new(0), 0); Card::MAX_STRENGTH.0 as usize + 1];
@@ -100,7 +100,7 @@ impl Hand {
 
         let mut joker_count = 0;
 
-        for card in sorted_cards.iter() {
+        for card in original_cards.iter() {
             if card.0 == 0 {
                 joker_count += 1;
             } else {
@@ -112,6 +112,6 @@ impl Hand {
 
         card_counts[0].1 += joker_count;
 
-        Self { card_counts: card_counts[0..5].try_into().unwrap(), original_order: sorted_cards }
+        Self { card_counts: card_counts[0..5].try_into().unwrap(), original_cards }
     }
 }
