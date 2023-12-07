@@ -4,11 +4,11 @@ fn main() {
         .map_while(Result::ok)
         .map(|s| {
             let (hand, bid) = s.split_once(' ').unwrap();
-            (Hand::from(hand), bid.parse().unwrap())
+            (Hand::from_str(hand), bid.parse().unwrap())
         })
         .collect();
 
-    hands_and_bids.sort_by_key(|(h, _)| *h);
+    hands_and_bids.sort_by(|(hand_a, _), (hand_b, _)| hand_a.compare_strength(hand_b));
 
     let total_score = hands_and_bids
         .iter()
@@ -61,19 +61,35 @@ impl Card {
     }
 }
 
-impl From<char> for Card {
-    fn from(c: char) -> Self {
-        Self::from_char(c)
+impl Hand {
+    fn strength(&self) -> HandStrength {
+        match self.card_counts {
+            [(_, 5), ..         ] => HandStrength::FiveOfAKind,
+            [(_, 4), ..         ] => HandStrength::FourOfAKind,
+            [(_, 3), (_, 2), .. ] => HandStrength::FullHouse,
+            [(_, 3), ..         ] => HandStrength::ThreeOfAKind,
+            [(_, 2), (_, 2), .. ] => HandStrength::TwoPairs,
+            [(_, 2), ..         ] => HandStrength::OnePair,
+            [(_, 1), ..         ] => HandStrength::HighCard,
+            _ => unreachable!(),
+        }
     }
-}
 
-impl From<&str> for Hand {
-    fn from(s: &str) -> Self {
+    fn compare_strength(&self, other: &Self) -> std::cmp::Ordering {
+        let hand_strength =  self.strength().cmp(&other.strength());
+        if hand_strength != std::cmp::Ordering::Equal {
+            hand_strength
+        } else {
+            other.original_order.cmp(&self.original_order)
+        }
+    }
+
+    fn from_str(s: &str) -> Self {
         assert!(s.len() == 5);
 
         let mut sorted_cards: [Card; 5] = [Card::new(0); 5];
         for (i, c) in s.chars().enumerate() {
-            sorted_cards[i] = Card::from(c);
+            sorted_cards[i] = Card::from_char(c);
         }
 
         let mut card_counts = [(Card::new(0), 0); Card::MAX_STRENGTH.0 as usize + 1];
@@ -97,41 +113,5 @@ impl From<&str> for Hand {
         card_counts[0].1 += joker_count;
 
         Self { card_counts: card_counts[0..5].try_into().unwrap(), original_order: sorted_cards }
-    }
-}
-
-impl Hand {
-    fn strength(&self) -> HandStrength {
-        match self.card_counts {
-            [(_, 5), ..         ] => HandStrength::FiveOfAKind,
-            [(_, 4), ..         ] => HandStrength::FourOfAKind,
-            [(_, 3), (_, 2), .. ] => HandStrength::FullHouse,
-            [(_, 3), ..         ] => HandStrength::ThreeOfAKind,
-            [(_, 2), (_, 2), .. ] => HandStrength::TwoPairs,
-            [(_, 2), ..         ] => HandStrength::OnePair,
-            [(_, 1), ..         ] => HandStrength::HighCard,
-            _ => unreachable!(),
-        }
-    }
-
-    fn compare_strength(&self, other: &Self) -> std::cmp::Ordering {
-        let hand_strength =  self.strength().cmp(&other.strength());
-        if hand_strength != std::cmp::Ordering::Equal {
-            hand_strength
-        } else {
-            other.original_order.cmp(&self.original_order)
-        }
-    }
-}
-
-impl PartialOrd for Hand {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.compare_strength(other))
-    }
-}
-
-impl Ord for Hand {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.compare_strength(other)
     }
 }
