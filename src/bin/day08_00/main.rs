@@ -16,7 +16,7 @@ fn main() {
 struct LocationID([u8; 3]);
 
 struct ParsedLine{
-    pub target: LocationID,
+    pub location: LocationID,
     pub l_choice: LocationID,
     pub r_choice: LocationID,
 }
@@ -41,6 +41,6 @@ impl ParsedLine {
         let l_choice = LocationID::from(l_choice);
         let r_choice = LocationID::from(r_choice);
 
-        Some(Self { target, l_choice, r_choice })
+        Some(Self { location: target, l_choice, r_choice })
     }
 }
