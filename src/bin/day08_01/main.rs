@@ -15,14 +15,9 @@ fn main() {
         .map(|parsed_line| (parsed_line.location, (parsed_line.left_location, parsed_line.right_location)))
         .collect();
 
-    let all_starting_locations: Vec<_> = paths
+    let full_cyclic_path: i64 = paths
         .keys()
-        .copied()
-        .filter(|location| location.is_starting())
-        .collect();
-
-    let full_cyclic_path = all_starting_locations
-        .iter()
+        .filter(|&location| location.is_starting())
         .map(|&starting_location| cyclic_path(&paths, starting_location, &choices_base))
         .fold(1, lcm);
 
