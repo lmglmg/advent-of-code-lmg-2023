@@ -33,7 +33,7 @@ fn cyclic_path(
 
     let mut current_location = starting_location;
 
-    let mut steps: i64 = 0;
+    let mut cycle_steps: i64 = 0;
 
     while !current_location.is_ending() {
         let (left_location, right_location) = paths.get(&current_location).unwrap();
@@ -53,10 +53,10 @@ fn cyclic_path(
             _ => unreachable!(),
         };
 
-        steps += 1;
+        cycle_steps += 1;
     }
 
-    lcm(steps, choices_base.len() as i64)
+    lcm(cycle_steps, choices_base.len() as i64)
 }
 
 #[derive(PartialOrd, Ord, PartialEq, Eq, Copy, Clone)]
