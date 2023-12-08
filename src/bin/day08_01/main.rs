@@ -12,7 +12,7 @@ fn main() {
     let paths: BTreeMap<LocationID, (LocationID, LocationID)> = lines
         .map_while(Result::ok)
         .map_while(|s| ParsedLine::try_from_str(&s))
-        .map(|parsed_line| (parsed_line.location, (parsed_line.l_choice, parsed_line.r_choice)))
+        .map(|parsed_line| (parsed_line.location, (parsed_line.left_location, parsed_line.right_location)))
         .collect();
 
     let all_starting_locations: Vec<_> = paths
@@ -80,8 +80,8 @@ impl LocationID {
 #[derive(PartialOrd, Ord, PartialEq, Eq, Copy, Clone)]
 struct ParsedLine{
     pub location: LocationID,
-    pub l_choice: LocationID,
-    pub r_choice: LocationID,
+    pub left_location: LocationID,
+    pub right_location: LocationID,
 }
 
 impl From<&str> for LocationID {
@@ -96,11 +96,11 @@ impl ParsedLine {
 
         let target = LocationID::from(target.trim());
 
-        let (l_choice, r_choice) = choices
+        let (left_location, right_location) = choices
             .strip_prefix('(')?
             .strip_suffix(')')?
             .split_once(", ")?;
 
-        Some(Self{location: target, l_choice: l_choice.into(), r_choice: r_choice.into()})
+        Some(Self{location: target, left_location: left_location.into(), right_location: right_location.into()})
     }
 }
