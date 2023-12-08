@@ -13,13 +13,32 @@ fn main() {
         .map(|parsed_line| (parsed_line.location, (parsed_line.l_choice, parsed_line.r_choice)))
         .collect();
 
-    let mut steps: i64 = 0;
+    let all_starting_locations: Vec<_> = paths
+        .keys()
+        .copied()
+        .filter(|location| location.is_starting())
+        .collect();
 
+    let full_cyclic_path = all_starting_locations
+        .iter()
+        .map(|&starting_location| cyclic_path(&paths, starting_location, &decisions_root))
+        .fold(1, num::integer::lcm);
+
+    println!("{}", full_cyclic_path);
+}
+
+fn cyclic_path(
+    paths: &BTreeMap<LocationID, (LocationID, LocationID)>,
+    starting_location: LocationID,
+    decisions_root: &[u8],
+) -> i64 {
     let mut decision_root_it = decisions_root.iter();
 
-    let mut current_location = LocationID([b'A'; 3]);
+    let mut current_location = starting_location;
 
-    while current_location != LocationID([b'Z'; 3]) {
+    let mut steps: i64 = 0;
+
+    while !current_location.is_ending() {
         let (l_choice, r_choice) = paths.get(&current_location).unwrap();
 
         let decision = match decision_root_it.next() {
@@ -39,14 +58,21 @@ fn main() {
         steps += 1;
     }
 
-    let full_step_count = num::integer::lcm(steps, decisions_root.len() as i64);
-
-    println!("{}", full_step_count);
-
+    num::integer::lcm(steps, decisions_root.len() as i64)
 }
 
 #[derive(PartialOrd, Ord, PartialEq, Eq, Copy, Clone)]
 struct LocationID([u8; 3]);
+
+impl LocationID {
+    pub fn is_starting(&self) -> bool {
+        self.0[2] == b'A'
+    }
+
+    pub fn is_ending(&self) -> bool {
+        self.0[2] == b'Z'
+    }
+}
 
 #[derive(PartialOrd, Ord, PartialEq, Eq, Copy, Clone)]
 struct ParsedLine{
