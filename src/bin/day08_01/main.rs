@@ -1,11 +1,12 @@
 use std::collections::BTreeMap;
+use advent_of_code_lmg_2023::*;
 
 fn main() {
     let mut lines = std::io::stdin().lines();
 
-    let decisions_root = lines.next().unwrap().unwrap().into_bytes();
+    let decisions_root = lines.read_line().into_bytes();
 
-    let _ = lines.next().unwrap(); // Skip blank line
+    lines.skip_line();
 
     let paths: BTreeMap<LocationID, (LocationID, LocationID)> = lines
         .map_while(Result::ok)
