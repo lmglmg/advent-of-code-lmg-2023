@@ -23,9 +23,11 @@ fn get_prediction(numbers: Vec<i64>) -> i64 {
     let mut numbers = numbers;
 
     while sz > 0 {
+
         if numbers[0..sz].iter().all(|&x| x == 0) {
             return numbers[sz..].iter().sum();
         }
+
         for i in 0..sz-1  {
             numbers[i] = numbers[i+1] - numbers[i];
         }
