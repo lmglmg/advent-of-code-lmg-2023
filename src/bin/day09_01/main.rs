@@ -34,7 +34,7 @@ fn get_prediction(numbers: Vec<i64>) -> i64 {
         }
 
         for i in (mid..numbers.len()-1).rev()  {
-            numbers[i+1] = numbers[i+1] - numbers[i];
+            numbers[i+1] -= numbers[i];
         }
 
         sz -= 1;
