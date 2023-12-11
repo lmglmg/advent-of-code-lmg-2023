@@ -11,7 +11,7 @@ fn main() {
     let mut element_indices: Vec<(usize, usize)> = Vec::new();
 
     for (h, w, element) in input.iter(){
-        if element != b'.' {
+        if element == b'#' {
             row_distance[h as usize] = 1;
             col_distance[w as usize] = 1;
             element_indices.push((h as usize, w as usize));
