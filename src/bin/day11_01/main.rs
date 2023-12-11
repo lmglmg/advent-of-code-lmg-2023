@@ -10,13 +10,13 @@ fn main() {
 
     let mut element_indices: Vec<(usize, usize)> = Vec::new();
 
-    for (h, w, element) in input.iter(){
-        if element == b'#' {
+    input.iter()
+        .filter(|(_, _, element)| element == &b'#')
+        .for_each(|(h, w, _)| {
             row_distance[h as usize] = 1;
             col_distance[w as usize] = 1;
             element_indices.push((h as usize, w as usize));
-        }
-    }
+        });
 
     let row_accumulated_distances: Vec<_> = row_distance
         .iter()
