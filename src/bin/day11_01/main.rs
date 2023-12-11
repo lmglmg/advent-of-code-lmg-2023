@@ -1,10 +1,12 @@
 use advent_of_code_lmg_2023::read_matrix_from_input;
 
+const EXPANSION_FACTOR: i64 = 1000000i64;
+
 fn main() {
     let input = read_matrix_from_input();
 
-    let mut row_distance = vec![1000000i64; input.height() as usize];
-    let mut col_distance = vec![1000000i64; input.width () as usize];
+    let mut row_distance = vec![EXPANSION_FACTOR; input.height() as usize];
+    let mut col_distance = vec![EXPANSION_FACTOR; input.width () as usize];
 
     let mut element_indices: Vec<(usize, usize)> = Vec::new();
 
